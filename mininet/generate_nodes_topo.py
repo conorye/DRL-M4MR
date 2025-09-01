@@ -11,7 +11,6 @@ import threading
 import xml.etree.ElementTree as ET
 
 import networkx
-import mininet
 from mininet.topo import Topo
 from mininet.net import Mininet
 from mininet.node import RemoteController
@@ -356,7 +355,7 @@ def main(graph, topo, finish_file):
     print("===Dumping host connections")
     dumpNodeConnections(net.hosts)
     print('===Wait ryu init')
-    time.sleep(40)
+    time.sleep(30)
     # 添加网关ip
     # run_ip_add_default(hosts)
 
