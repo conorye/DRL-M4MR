@@ -1,3 +1,12 @@
+'''
+Author: yc && qq747339545@163.com
+Date: 2025-09-01 12:11:10
+LastEditTime: 2025-09-01 15:22:58
+FilePath: /25.9.DRL-M4MR/mininet/generate_matrices.py
+Description: 
+
+Copyright (c) 2025 by ${git_name_email}, All Rights Reserved. 
+'''
 # -*- coding: utf-8 -*-
 # @File    : generate_matrices.py
 # @Date    : 2021-12-27
@@ -8,6 +17,7 @@ from pathlib import Path
 
 import numpy as np
 import numpy.random
+# import tmgen
 from tmgen.models import modulated_gravity_tm
 import matplotlib.pyplot as plt
 
@@ -83,8 +93,8 @@ if __name__ == '__main__':
     parser.add_argument("--communicate_ratio", default=0.7, help="percentage of nodes to communicate")
     args = parser.parse_args()
 
-    # set_seed()
-    # generate_tm()
+    set_seed()
+    generate_tm()
 
-    mean_time_tm = np.load(r"D:\WorkSpace\Hello_Myself\Hello_Multicast\RLMulticastProject\mininet\tm_statistic\tm_statistic\mean_time_tm.npy")
-    plot_tm_mean(mean_time_tm)
+    # mean_time_tm = np.load(r"D:\WorkSpace\Hello_Myself\Hello_Multicast\RLMulticastProject\mininet\tm_statistic\tm_statistic\mean_time_tm.npy")
+    # plot_tm_mean(mean_time_tm)
