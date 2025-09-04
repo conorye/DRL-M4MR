@@ -165,29 +165,56 @@ def run_iperf(path, host):
     host.cmd(_cmd)
 
 
+# def all_host_run_iperf(hosts: dict, path, finish_file):
+#     """
+#         path = r'./iperfTM/'
+#     """
+#     idxs = len(os.listdir(path))
+#     path = path + '/TM-'
+#     for idx in range(idxs):
+#         script_path = path + str(idx)
+#         for i, h in hosts.items():
+#             servers_cmd = script_path + '/Servers/server_' + str(i) + '.sh'
+#             _cmd = 'bash '
+#             print(_cmd + servers_cmd)
+#             h.cmd(_cmd + servers_cmd)
+
+#         for i, h in hosts.items():
+#             clients_cmd = script_path + '/Clients/client_' + str(i) + '.sh'
+#             _cmd = 'bash '
+#             print(_cmd + clients_cmd + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
+#             h.cmd(_cmd + clients_cmd)
+
+#         time.sleep(30)
+
+#     write_iperf_time(finish_file)
+
+iperf_stop_flag = False   # 全局标志位
+
 def all_host_run_iperf(hosts: dict, path, finish_file):
-    """
-        path = r'./iperfTM/'
-    """
+    global iperf_stop_flag
     idxs = len(os.listdir(path))
     path = path + '/TM-'
     for idx in range(idxs):
+        if iperf_stop_flag:   # 🚨 每轮检查一次
+            print("*** iperf loop stopped")
+            break
+
         script_path = path + str(idx)
         for i, h in hosts.items():
             servers_cmd = script_path + '/Servers/server_' + str(i) + '.sh'
-            _cmd = 'bash '
-            print(_cmd + servers_cmd)
-            h.cmd(_cmd + servers_cmd)
+            print('bash ' + servers_cmd)
+            h.cmd('bash ' + servers_cmd)
 
         for i, h in hosts.items():
             clients_cmd = script_path + '/Clients/client_' + str(i) + '.sh'
-            _cmd = 'bash '
-            print(_cmd + clients_cmd + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
-            h.cmd(_cmd + clients_cmd)
+            print('bash ' + clients_cmd + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
+            h.cmd('bash ' + clients_cmd)
 
-        time.sleep(300)
+        time.sleep(30)
 
     write_iperf_time(finish_file)
+
 
 
 def write_pinall_time(finish_file):
@@ -220,10 +247,6 @@ def remove_finish_file(finish_file):
         pass
 
 
-def net_h1_ping_others(net):
-    hosts = net.hosts
-    for h in hosts[1:]:
-        net.ping((hosts[0], h))
 
 
 class GEANT23nodesTopo(Topo):
@@ -334,9 +357,10 @@ class Nodes14Topo(Topo):
 
         # 添加host
         for i in self.node_idx:
-            _h = self.addHost(f'h{i}', ip=f'10.0.0.{i}', mac=f'00.00.00.00.00.0{i}')
+            _h = self.addHost(f'h{i}', ip=f'192.168.0.{i}', mac=f'00.00.00.00.00.0{i}')
             self.addLink(_h, switches[i], port1=0, port2=self.host_port,
                          bw=self.bw4)
+
 
 
 def main(graph, topo, finish_file):
@@ -355,23 +379,61 @@ def main(graph, topo, finish_file):
     print("===Dumping host connections")
     dumpNodeConnections(net.hosts)
     print('===Wait ryu init')
-    time.sleep(30)
+    time.sleep(20)
     # 添加网关ip
     # run_ip_add_default(hosts)
 
-    # net.pingAll()
-    net_h1_ping_others(net)
+    # net.pingAll() 
+    from types import MethodType
+   
     write_pinall_time(finish_file)
-
+    
+    
     # iperf脚本
     # hosts[1].cmd('iperf -s -u -p 1002 -1 &')
     # hosts[2].cmd('iperf -c 10.0.0.1 -u -p 1002 -b 20000k -t 30 &')
     print('===Run iperf scripts')
-    t = threading.Thread(target=all_host_run_iperf, args=(hosts, iperf_path, finish_file), name='iperf', daemon=True)
+    # t = threading.Thread(target=all_host_run_iperf, args=(hosts, iperf_path, finish_file), name='iperf', daemon=True)
+ 
+    # === 再定义 runiperf 方法 ===
+    
+    iperf_stop_flag = False
+    iperf_thread = None
+
+    def net_h1_ping_others(self):
+        hosts = self.hosts
+        for h in hosts[1:]:
+            self.ping((hosts[0], h))
+
+    def runiperf(self):
+        global iperf_stop_flag, iperf_thread
+        iperf_stop_flag = False   # ✅ 先清零
+
+        print("*** Starting iperf scripts in background thread...")
+        iperf_thread = threading.Thread(
+            target=all_host_run_iperf,
+            args=(hosts, iperf_path, finish_file),
+            name='iperf',
+            daemon=True
+        )
+        iperf_thread.start()
+
+    def stopiperf(self):
+        global iperf_stop_flag
+        iperf_stop_flag = True   # ✅ 通知线程退出
+        print("*** iperf stop signal sent")
+        
+    net.net_h1_ping_others = MethodType(net_h1_ping_others, net)
+    net.runiperf = MethodType(runiperf, net)
+    net.stopiperf = MethodType(stopiperf, net)
+
     print('===Thread iperf start')
-    t.start()
+    # net.runiperf()
     # all_host_run_iperf(hosts, iperf_path)
 
+    
+    
+    
     CLI(net)
     net.stop()
 

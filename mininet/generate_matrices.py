@@ -1,7 +1,7 @@
 '''
 Author: yc && qq747339545@163.com
 Date: 2025-09-01 12:11:10
-LastEditTime: 2025-09-01 15:22:58
+LastEditTime: 2025-09-03 21:36:39
 FilePath: /25.9.DRL-M4MR/mininet/generate_matrices.py
 Description: 
 
@@ -17,7 +17,7 @@ from pathlib import Path
 
 import numpy as np
 import numpy.random
-# import tmgen
+import tmgen
 from tmgen.models import modulated_gravity_tm
 import matplotlib.pyplot as plt
 
@@ -27,9 +27,17 @@ def set_seed():
 
 
 def generate_tm():
-    tm = modulated_gravity_tm(args.num_nodes, args.num_tms, args.mean_traffic, args.pm_ratio, args.t_ratio,
-                              args.diurnal_freq, args.spatial_variance, args.temporal_variance)
-
+    # tm = modulated_gravity_tm(args.num_nodes, args.num_tms, args.mean_traffic, args.pm_ratio, args.t_ratio,args.diurnal_freq, args.spatial_variance, args.temporal_variance)
+    tm = modulated_gravity_tm(
+    int(args.num_nodes), 
+    int(args.num_tms),
+    float(args.mean_traffic), 
+    float(args.pm_ratio), 
+    float(args.t_ratio),
+    float(args.diurnal_freq), 
+    float(args.spatial_variance), 
+    float(args.temporal_variance)
+    )
     mean_time_tm = []
     for t in range(args.num_tms):
         mean_time_tm.append(tm.at_time(t).mean())
@@ -79,19 +87,33 @@ def plot_tm_mean(mean_list, x_label='time', y_label='mean_traffic', title='mean'
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Generate traffic matrices")
-    parser.add_argument("--seed", default=2020, help="random seed")
-    parser.add_argument("--num_nodes", default=14, help="number of nodes of network")
-    parser.add_argument("--num_tms", default=24, help="total number of matrices")
-    # 1.55 * 1e3 * 0.75
-    parser.add_argument("--mean_traffic", default=5 * 10 ** 3 * 0.75, help="mean volume of traffic (Kbps)")
-    parser.add_argument("--pm_ratio", default=1.5, help="peak-to-mean ratio")
-    parser.add_argument("--t_ratio", default=0.75, help="trough-to-mean ratio")
-    parser.add_argument("--diurnal_freq", default=1 / 24, help="Frequency of modulation")
-    parser.add_argument("--spatial_variance", default=500,
-                        help="Variance on the volume of traffic between origin-destination pairs")
-    parser.add_argument("--temporal_variance", default=0.03, help="Variance on the volume in time")
-    parser.add_argument("--communicate_ratio", default=0.7, help="percentage of nodes to communicate")
+    # parser.add_argument("--seed", default=2020, help="random seed")
+    # parser.add_argument("--num_nodes", default=14, help="number of nodes of network")
+    # parser.add_argument("--num_tms", default=24, help="total number of matrices")
+    # # 1.55 * 1e3 * 0.75
+    # parser.add_argument("--mean_traffic", default=5 * 10 ** 3 * 0.75, help="mean volume of traffic (Kbps)")
+    # parser.add_argument("--pm_ratio", default=1.5, help="peak-to-mean ratio")
+    # parser.add_argument("--t_ratio", default=0.75, help="trough-to-mean ratio")
+    # parser.add_argument("--diurnal_freq", default=1 / 24, help="Frequency of modulation")
+    # parser.add_argument("--spatial_variance", default=500,
+    #                     help="Variance on the volume of traffic between origin-destination pairs")
+    # parser.add_argument("--temporal_variance", default=0.03, help="Variance on the volume in time")
+    # parser.add_argument("--communicate_ratio", default=0.7, help="percentage of nodes to communicate")
+    
+    parser.add_argument("--num_nodes", type=int, default=14, help="number of nodes of network")
+    parser.add_argument("--num_tms", type=int, default=24, help="total number of matrices")
+    parser.add_argument("--seed", type=int, default=2020, help="random seed")
+    parser.add_argument("--mean_traffic", type=float, default=5 * 10 ** 3 * 0.75, help="mean volume of traffic (Kbps)")
+    parser.add_argument("--pm_ratio", type=float, default=1.5, help="peak-to-mean ratio")
+    parser.add_argument("--t_ratio", type=float, default=0.75, help="trough-to-mean ratio")
+    parser.add_argument("--diurnal_freq", type=float, default=1/24, help="Frequency of modulation")
+    parser.add_argument("--spatial_variance", type=float, default=500, help="Variance on OD traffic")
+    parser.add_argument("--temporal_variance", type=float, default=0.03, help="Temporal variance")
+    parser.add_argument("--communicate_ratio", type=float, default=0.7, help="percentage of nodes to communicate")
+
     args = parser.parse_args()
+    print(f"num_tms={args.num_tms}, type={type(args.num_tms)}")
+    print(f"num_nodes={args.num_nodes}, type={type(args.num_nodes)}")
 
     set_seed()
     generate_tm()
